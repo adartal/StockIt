@@ -17,6 +17,10 @@ dependencies = [
   "pandas>=3.0.3",
   "httpx>=0.28.1",
   "edgartools>=4.0",
+  "instructor>=1.6",
+  "anthropic>=0.40",
+  "openai>=1.55",
+  "google-genai>=0.3",
 ]
 
 [dependency-groups]
@@ -53,6 +57,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["edgar", "edgar.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["instructor", "instructor.*", "google.genai", "google.genai.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
