@@ -20,6 +20,28 @@ export interface Note {
   updated_at: string;
 }
 
+export interface WatchlistItem {
+  id: string;
+  ticker: string;
+  last_plan_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlanRevision {
+  id: string;
+  plan_id: string;
+  created_at: string;
+  payload: Record<string, unknown>;
+  diff_json: Record<string, unknown>;
+}
+
+export interface UserRiskConfig {
+  risk_per_trade_pct: number;
+  max_position_pct: number;
+  preferred_llm: "claude" | "openai" | "gemini";
+}
+
 const SESSION_COOKIE_CANDIDATES = [
   "__Secure-authjs.session-token",
   "authjs.session-token",
@@ -137,4 +159,36 @@ export async function createNote(
     throw new Error(`POST /plans/${planId}/notes failed: ${res.status}`);
   }
   return (await res.json()) as Note;
+}
+
+export async function listWatchlist(): Promise<WatchlistItem[]> {
+  return apiFetch<WatchlistItem[]>("/watchlist");
+}
+
+export async function addWatchlistItem(ticker: string): Promise<WatchlistItem> {
+  return apiFetch<WatchlistItem>("/watchlist", {
+    method: "POST",
+    body: JSON.stringify({ ticker }),
+  });
+}
+
+export async function deleteWatchlistItem(id: string): Promise<void> {
+  await apiFetch<void>(`/watchlist/${id}`, { method: "DELETE" });
+}
+
+export async function refreshWatchlistItem(id: string): Promise<PlanRevision> {
+  return apiFetch<PlanRevision>(`/watchlist/${id}/refresh`, { method: "POST" });
+}
+
+export async function getSettings(): Promise<UserRiskConfig> {
+  return apiFetch<UserRiskConfig>("/settings");
+}
+
+export async function patchSettings(
+  patch: Partial<UserRiskConfig>,
+): Promise<UserRiskConfig> {
+  return apiFetch<UserRiskConfig>("/settings", {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
 }

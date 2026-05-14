@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.notes import router as notes_router
 from app.routes.plans import router as plans_router
+from app.routes.settings import router as settings_router
 from app.routes.watchlist import router as watchlist_router
 from app.scheduler import _scheduler_enabled, build_scheduler
 
@@ -72,6 +73,7 @@ def health() -> dict[str, str]:
 app.include_router(plans_router)
 app.include_router(watchlist_router)
 app.include_router(notes_router)
+app.include_router(settings_router)
 
 
 __all__ = ["app"]

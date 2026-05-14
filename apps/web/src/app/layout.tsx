@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { auth } from "../../auth";
+import { TopNav } from "@/components/nav/top-nav";
 import "./globals.css";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -19,17 +21,19 @@ export const metadata: Metadata = {
   description: "Personal portfolio-action engine",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {session?.user ? <TopNav email={session.user.email} /> : null}
         {children}
         <Toaster position="top-right" richColors closeButton />
       </body>
