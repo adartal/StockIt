@@ -13,6 +13,7 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from decimal import Decimal
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
@@ -34,6 +35,27 @@ from app.pipeline.schema import (
     Stop,
 )
 from app.routes.deps import get_llm_provider
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Add the --run-llm flag to opt in to network/LLM e2e tests."""
+    parser.addoption(
+        "--run-llm",
+        action="store_true",
+        default=False,
+        help="Run end-to-end tests that hit real LLM providers and live data sources.",
+    )
+
+
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
+    if config.getoption("--run-llm"):
+        return
+    skip_llm = pytest.mark.skip(reason="needs --run-llm to run (real LLM + live data)")
+    for item in items:
+        if "llm_e2e" in item.keywords:
+            item.add_marker(skip_llm)
 
 
 def build_plan(ticker: str = "AAPL", horizon: Horizon = "swing") -> Plan:
