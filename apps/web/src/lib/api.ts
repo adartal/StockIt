@@ -1,6 +1,16 @@
+import "server-only";
+
 import { cookies } from "next/headers";
 
-import type { Plan } from "@/types/generated";
+import type { components, paths } from "./api-schema";
+
+export type Plan = components["schemas"]["Plan"];
+export type PlanCreateRequest = components["schemas"]["PlanCreateRequest"];
+export type Horizon = PlanCreateRequest["horizon"];
+
+type CreatePlanOp = paths["/plans"]["post"];
+type CreatePlanResponse =
+  CreatePlanOp["responses"][200]["content"]["application/json"];
 
 export interface Note {
   id: string;
@@ -10,7 +20,7 @@ export interface Note {
   updated_at: string;
 }
 
-const SESSION_COOKIE_NAMES = [
+const SESSION_COOKIE_CANDIDATES = [
   "__Secure-authjs.session-token",
   "authjs.session-token",
 ];
@@ -23,11 +33,22 @@ export function apiBaseUrl(): string {
   );
 }
 
-async function bearerToken(): Promise<string | null> {
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly body?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+async function readSessionToken(): Promise<string | null> {
   const jar = await cookies();
-  for (const name of SESSION_COOKIE_NAMES) {
-    const c = jar.get(name);
-    if (c?.value) return c.value;
+  for (const name of SESSION_COOKIE_CANDIDATES) {
+    const value = jar.get(name)?.value;
+    if (value) return value;
   }
   return null;
 }
@@ -36,16 +57,54 @@ async function authedFetch(
   path: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  const token = await bearerToken();
+  const token = await readSessionToken();
   const headers = new Headers(init.headers);
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (!headers.has("Content-Type") && init.body) {
-    headers.set("Content-Type", "application/json");
+  headers.set("accept", "application/json");
+  if (init.body && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
   }
+  if (token) headers.set("authorization", `Bearer ${token}`);
   return fetch(`${apiBaseUrl()}${path}`, {
     ...init,
     headers,
     cache: "no-store",
+  });
+}
+
+async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await authedFetch(path, init);
+  if (!res.ok) {
+    let detail: unknown;
+    try {
+      detail = await res.json();
+    } catch {
+      detail = await res.text().catch(() => "");
+    }
+    const message =
+      (typeof detail === "object" &&
+        detail !== null &&
+        "detail" in detail &&
+        typeof (detail as { detail: unknown }).detail === "string" &&
+        (detail as { detail: string }).detail) ||
+      res.statusText ||
+      `Request failed with status ${res.status}`;
+    throw new ApiError(res.status, message, detail);
+  }
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}
+
+// The OpenAPI response model is `Plan`, but the persisted row has an id we
+// rely on to redirect to the plan page. Treat id as optional so the client
+// keeps compiling if the API ever drops it.
+export type CreatedPlan = CreatePlanResponse & { id?: string };
+
+export async function createPlan(
+  input: PlanCreateRequest,
+): Promise<CreatedPlan> {
+  return apiFetch<CreatedPlan>("/plans", {
+    method: "POST",
+    body: JSON.stringify(input),
   });
 }
 
