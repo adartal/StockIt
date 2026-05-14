@@ -1,18 +1,11 @@
 import NextAuth from "next-auth";
-import Resend from "next-auth/providers/resend";
-import { SignJWT, jwtVerify } from "jose";
+import { jwtVerify } from "jose";
 
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
-
-function allowedEmails(): Set<string> {
-  const raw = process.env.ALLOWED_EMAILS ?? "";
-  return new Set(
-    raw
-      .split(",")
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
+import {
+  SESSION_MAX_AGE_SECONDS,
+  isEmailAllowed,
+  mintSessionToken,
+} from "@/lib/magic-link";
 
 function authSecret(): Uint8Array {
   const secret = process.env.AUTH_SECRET;
@@ -37,13 +30,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!token) {
         throw new Error("Missing token to encode");
       }
-      const now = Math.floor(Date.now() / 1000);
-      const exp = now + (maxAge ?? SESSION_MAX_AGE_SECONDS);
-      return await new SignJWT({ ...token })
-        .setProtectedHeader({ alg: "HS256", typ: "JWT" })
-        .setIssuedAt(now)
-        .setExpirationTime(exp)
-        .sign(authSecret());
+      const email = typeof token.email === "string" ? token.email : null;
+      if (!email) {
+        throw new Error("Session token missing email");
+      }
+      return await mintSessionToken(email, maxAge ?? SESSION_MAX_AGE_SECONDS);
     },
     async decode({ token }) {
       if (!token) return null;
@@ -57,12 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     },
   },
-  providers: [
-    Resend({
-      apiKey: process.env.AUTH_RESEND_KEY ?? process.env.RESEND_API_KEY,
-      from: process.env.AUTH_EMAIL_FROM ?? process.env.EMAIL_FROM,
-    }),
-  ],
+  providers: [],
   pages: {
     signIn: "/login",
     verifyRequest: "/login?check=email",
@@ -71,9 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user }) {
       const email = user.email?.toLowerCase();
       if (!email) return false;
-      const allow = allowedEmails();
-      if (allow.size === 0) return false;
-      return allow.has(email);
+      return isEmailAllowed(email);
     },
     async jwt({ token, user }) {
       if (user?.email) {

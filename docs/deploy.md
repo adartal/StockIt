@@ -160,12 +160,18 @@ vercel env add AUTH_EMAIL_FROM production
 
 vercel env add ALLOWED_EMAILS production
 # paste: same comma-separated list you used on Fly
+
+vercel env add AUTH_URL production
+# paste: https://stockit-web.vercel.app  (the URL Vercel hands back below;
+# the magic-link emails embed this as the absolute origin of the verify URL)
 ```
 
-> The Auth.js Resend provider in [apps/web/auth.ts](../apps/web/auth.ts)
-> accepts either `AUTH_RESEND_KEY`/`RESEND_API_KEY` and
-> `AUTH_EMAIL_FROM`/`EMAIL_FROM` — the `AUTH_*` form is preferred because
-> Auth.js v5 auto-loads variables with that prefix.
+> The custom magic-link flow in [apps/web/auth.ts](../apps/web/auth.ts) and
+> [apps/web/src/lib/magic-link.ts](../apps/web/src/lib/magic-link.ts) accepts
+> either `AUTH_RESEND_KEY`/`RESEND_API_KEY` and `AUTH_EMAIL_FROM`/`EMAIL_FROM` —
+> the `AUTH_*` form is preferred. No DB or KV adapter is required: verification
+> is a 10-minute HS256-signed JWT, signed with the same `AUTH_SECRET` as the
+> session cookie.
 
 Deploy:
 
@@ -221,9 +227,10 @@ real deployed stack.
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | client + server, e.g. `app/api-client.ts` | Base URL of the Fly API. |
 | `AUTH_SECRET` | `auth.ts` (Auth.js v5) | HMAC key — must equal Fly `AUTH_SECRET`. |
-| `AUTH_RESEND_KEY` (or `RESEND_API_KEY`) | `auth.ts` | Resend API key for magic-link email. |
-| `AUTH_EMAIL_FROM` (or `EMAIL_FROM`) | `auth.ts` | Sender, must be a verified Resend identity. |
-| `ALLOWED_EMAILS` | `auth.ts` `signIn` callback | Same allowlist as the API. |
+| `AUTH_RESEND_KEY` (or `RESEND_API_KEY`) | `lib/magic-link.ts` | Resend API key for magic-link email. |
+| `AUTH_EMAIL_FROM` (or `EMAIL_FROM`) | `lib/magic-link.ts` | Sender, must be a verified Resend identity. |
+| `ALLOWED_EMAILS` | `auth.ts` `signIn` callback + `lib/magic-link.ts` | Same allowlist as the API. |
+| `AUTH_URL` | `app/login/page.tsx` | Absolute origin baked into magic-link URLs in outbound emails. Must match the public web URL. |
 
 ---
 

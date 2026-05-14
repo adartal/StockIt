@@ -1,6 +1,12 @@
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { CircleAlertIcon, MailCheckIcon } from "lucide-react";
 
-import { signIn } from "../../../auth";
+import {
+  isEmailAllowed,
+  mintMagicLinkToken,
+  sendMagicLinkEmail,
+} from "@/lib/magic-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +23,19 @@ type SearchParams = Promise<{ check?: string; error?: string }>;
 function errorMessage(error: string | undefined): string | null {
   if (!error) return null;
   if (error === "AccessDenied") return "This email isn't on the allowlist.";
+  if (error === "InvalidLink")
+    return "That sign-in link is invalid or has expired. Request a new one below.";
   return "Sign-in failed. Please try again.";
+}
+
+async function originFromHeaders(): Promise<string> {
+  const explicit = process.env.AUTH_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  if (!host) throw new Error("Cannot determine request origin");
+  return `${proto}://${host}`;
 }
 
 export default async function LoginPage({
@@ -64,10 +82,18 @@ export default async function LoginPage({
           <form
             action={async (formData) => {
               "use server";
-              await signIn("resend", {
-                email: String(formData.get("email") ?? ""),
-                redirectTo: "/",
-              });
+              const email = String(formData.get("email") ?? "").trim().toLowerCase();
+              if (email && isEmailAllowed(email)) {
+                const origin = await originFromHeaders();
+                const token = await mintMagicLinkToken(email);
+                const url = `${origin}/auth/verify?token=${encodeURIComponent(token)}`;
+                try {
+                  await sendMagicLinkEmail(email, url);
+                } catch (err) {
+                  console.error("[login] sendMagicLinkEmail failed", err);
+                }
+              }
+              redirect("/login?check=email");
             }}
             className="space-y-3"
           >
