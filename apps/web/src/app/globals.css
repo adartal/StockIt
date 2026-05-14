@@ -128,3 +128,32 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  @page {
+    margin: 0.6in;
+  }
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  nav,
+  header[data-app-nav],
+  [data-print-hide],
+  .print\:hidden {
+    display: none !important;
+  }
+  #plan-print-root {
+    break-inside: auto;
+  }
+  #plan-print-root [data-slot="card"] {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #e5e5e5 !important;
+    ring-color: transparent !important;
+  }
+  a[href]::after {
+    content: "";
+  }
+}
