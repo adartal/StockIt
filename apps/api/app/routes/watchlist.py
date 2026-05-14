@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime
-from decimal import Decimal
 from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Path, Response, status
@@ -13,7 +12,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
 from app.llm.router import NoProviderAvailableError
-from app.models import Plan as PlanRow
 from app.models import PlanRevision as PlanRevisionRow
 from app.models import WatchlistItem
 from app.pipeline.orchestrator import generate_plan
@@ -24,6 +22,7 @@ from app.routes.deps import (
     SessionDep,
     get_user_risk_config,
 )
+from app.scheduler import NoPriorPlanError, refresh_watchlist_item
 
 logger = logging.getLogger(__name__)
 
@@ -107,24 +106,12 @@ async def delete_watchlist_item(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-def _diff_plans(prev: dict[str, Any], curr: dict[str, Any]) -> dict[str, Any]:
-    """Return a shallow {key: {before, after}} diff for top-level Plan fields."""
-    diff: dict[str, Any] = {}
-    keys = set(prev) | set(curr)
-    for key in keys:
-        before = prev.get(key)
-        after = curr.get(key)
-        if before != after:
-            diff[key] = {"before": before, "after": after}
-    return diff
-
-
 @router.post(
     "/{item_id}/refresh",
     response_model=PlanRevisionRead,
     status_code=status.HTTP_200_OK,
 )
-async def refresh_watchlist_item(
+async def refresh_watchlist_item_route(
     item_id: Annotated[uuid.UUID, Path()],
     user: CurrentUser,
     session: SessionDep,
@@ -137,41 +124,26 @@ async def refresh_watchlist_item(
             detail="Watchlist item not found",
         )
 
-    prev_plan_row: PlanRow | None = None
-    if item.last_plan_id is not None:
-        prev_plan_row = await session.get(PlanRow, item.last_plan_id)
-    if prev_plan_row is None:
-        # Pick the most recent existing plan for this ticker, if any.
-        result = await session.execute(
-            select(PlanRow)
-            .where(PlanRow.user_id == user.id, PlanRow.ticker == item.ticker)
-            .order_by(PlanRow.generated_at.desc())
-            .limit(1)
+    risk_config = await get_user_risk_config(session, user.id)
+    try:
+        # Pass the module-local `generate_plan` symbol explicitly so the
+        # existing test that monkeypatches `watchlist.generate_plan` still
+        # routes through the patched implementation.
+        return await refresh_watchlist_item(
+            session=session,
+            llm=llm,
+            item=item,
+            risk_config=risk_config,
+            generate_plan_fn=generate_plan,
         )
-        prev_plan_row = result.scalar_one_or_none()
-
-    if prev_plan_row is None:
+    except NoPriorPlanError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
                 "Watchlist item has no existing Plan; create a plan first "
                 "before requesting a refresh."
             ),
-        )
-
-    risk_config = await get_user_risk_config(session, user.id)
-    horizon = prev_plan_row.horizon  # str matches Horizon literal
-    capital = Decimal(str(prev_plan_row.capital))
-    try:
-        new_plan = await generate_plan(
-            user_id=user.id,
-            ticker=item.ticker,
-            horizon=horizon,  # type: ignore[arg-type]
-            capital=capital,
-            risk_config=risk_config,
-            session=session,
-            llm=llm,
-        )
+        ) from exc
     except RiskRuleViolation as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -182,29 +154,6 @@ async def refresh_watchlist_item(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="No LLM provider available",
         ) from exc
-
-    # The generated plan was persisted by the orchestrator as a fresh Plan
-    # row. Look it up so we can attach a PlanRevision to it.
-    result = await session.execute(
-        select(PlanRow)
-        .where(PlanRow.user_id == user.id, PlanRow.ticker == item.ticker)
-        .order_by(PlanRow.generated_at.desc())
-        .limit(1)
-    )
-    new_plan_row = result.scalar_one()
-
-    payload = new_plan.model_dump(mode="json")
-    diff = _diff_plans(prev_plan_row.payload, payload)
-    revision = PlanRevisionRow(
-        plan_id=new_plan_row.id,
-        payload=payload,
-        diff_json=diff,
-    )
-    session.add(revision)
-    item.last_plan_id = new_plan_row.id
-    await session.commit()
-    await session.refresh(revision)
-    return revision
 
 
 __all__ = ["router"]

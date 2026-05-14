@@ -1,12 +1,16 @@
 """FastAPI app entrypoint.
 
-Wires the M6 routers (plans, watchlist, notes) and configures CORS so the
-Next.js app at ``apps/web`` can call this API in dev and prod.
+Wires the M6 routers (plans, watchlist, notes), configures CORS so the
+Next.js app at ``apps/web`` can call this API in dev and prod, and starts
+the M9 watchlist scheduler inside the app's lifespan.
 """
 
 from __future__ import annotations
 
+import logging
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.notes import router as notes_router
 from app.routes.plans import router as plans_router
 from app.routes.watchlist import router as watchlist_router
+from app.scheduler import _scheduler_enabled, build_scheduler
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_CORS_ORIGINS = (
     "http://localhost:3000",
@@ -28,7 +35,25 @@ def _cors_origins() -> list[str]:
     return [o.strip() for o in raw.split(",") if o.strip()]
 
 
-app = FastAPI(title="StockIt API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    scheduler = None
+    if _scheduler_enabled():
+        scheduler = build_scheduler()
+        scheduler.start()
+        app.state.scheduler = scheduler
+        logger.info("scheduler: started watchlist daily refresh job")
+    else:
+        app.state.scheduler = None
+        logger.info("scheduler: disabled (test mode or explicit override)")
+    try:
+        yield
+    finally:
+        if scheduler is not None:
+            scheduler.shutdown(wait=False)
+
+
+app = FastAPI(title="StockIt API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
