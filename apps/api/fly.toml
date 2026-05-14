@@ -1,0 +1,49 @@
+# Fly.io config for the StockIt FastAPI backend.
+# Replace `app` and `primary_region` with whatever you pick during
+# `fly launch --no-deploy` (see docs/deploy.md).
+
+app = "stockit-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  # Apply pending alembic migrations before the new release takes traffic.
+  release_command = "alembic upgrade head"
+  strategy = "rolling"
+
+[env]
+  PORT = "8080"
+  # Override locally (or via `fly secrets set WEB_CORS_ORIGINS=...`) to allow
+  # the Vercel domain to call the API. Set to the production web URL once
+  # Vercel issues it (e.g. https://stockit.vercel.app).
+  WEB_CORS_ORIGINS = ""
+  # Single instance => APScheduler runs exactly once. If you ever scale to
+  # multiple machines, disable here and run the scheduler elsewhere.
+  STOCKIT_SCHEDULER_ENABLED = "1"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"     # scheduler needs the machine awake
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  cpus = 1
