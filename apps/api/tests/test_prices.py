@@ -219,10 +219,14 @@ async def test_fetch_ohlcv_empty_intraday_uses_alpha_vantage(
 ) -> None:
     monkeypatch.setenv("ALPHAVANTAGE_API_KEY", "test-key")
 
-    empty = pd.DataFrame()
+    # Use a timestamp from earlier today so the lookback_days=1 cutoff filter
+    # in `_fetch_alpha_vantage` keeps it. (A hardcoded date drifts past the
+    # cutoff once real time passes it.)
+    recent_ts = datetime.now(UTC).replace(microsecond=0, second=0, minute=0)
+    recent_ts -= timedelta(hours=1)
     av_payload = {
         "Time Series (1min)": {
-            "2026-05-12 19:59:00": {
+            recent_ts.strftime("%Y-%m-%d %H:%M:%S"): {
                 "1. open": "182.10",
                 "2. high": "182.40",
                 "3. low": "182.00",
@@ -231,6 +235,7 @@ async def test_fetch_ohlcv_empty_intraday_uses_alpha_vantage(
             },
         },
     }
+    empty = pd.DataFrame()
 
     async def _fake_av(self_client: Any, url: str, params: dict[str, Any]) -> Any:
         return _FakeResponse(av_payload)
