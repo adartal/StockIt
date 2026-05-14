@@ -89,8 +89,8 @@ Submit.
 traceback. Most common: missing one of the LLM keys, missing data-API key,
 or a CORS error (which would show in the browser console, not Fly logs).
 
-**If it 401s in the browser:** `AUTH_SECRET` (Vercel) and `AUTH_JWT_SECRET`
-(Fly) don't match. Both must be the same value.
+**If it 401s in the browser:** `AUTH_SECRET` on Vercel and `AUTH_SECRET` on
+Fly don't match. They must be byte-identical.
 
 **If CORS error in browser console:** `WEB_CORS_ORIGINS` on Fly doesn't
 include the Vercel URL exactly (no trailing slash, scheme must match).

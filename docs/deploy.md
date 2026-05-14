@@ -95,12 +95,13 @@ fly secrets set \
   NEWSAPI_API_KEY='...' \
   FRED_API_KEY='...' \
   ALPHA_VANTAGE_API_KEY='...' \
-  AUTH_JWT_SECRET='<openssl rand -hex 32>' \
+  AUTH_SECRET='<openssl rand -hex 32>' \
   ALLOWED_EMAILS='you@example.com,partner@example.com'
 ```
 
-(Names match what the code reads: see `apps/api/.env.example`. `AUTH_JWT_SECRET`
-must match the Vercel `AUTH_SECRET` set in step 3 — they sign/verify the same JWT.)
+(Names match what the code reads: see `apps/api/.env.example`. `AUTH_SECRET`
+must be byte-identical to the Vercel `AUTH_SECRET` set in step 3 — same
+HMAC key signs and verifies the session JWT in both processes.)
 
 Deploy:
 
@@ -149,7 +150,7 @@ vercel env add NEXT_PUBLIC_API_URL production
 # paste: https://stockit-api.fly.dev
 
 vercel env add AUTH_SECRET production
-# paste: same value you used for AUTH_JWT_SECRET on Fly
+# paste: same value you used for AUTH_SECRET on Fly
 
 vercel env add AUTH_RESEND_KEY production
 # paste: re_...  (from resend.com → API Keys)
@@ -209,7 +210,7 @@ real deployed stack.
 | `NEWSAPI_API_KEY` | `app/pipeline/data/news.py` | Newsroom feed. |
 | `FRED_API_KEY` | `app/pipeline/data/macro.py` | Macro rates. |
 | `ALPHA_VANTAGE_API_KEY` | `app/pipeline/data/prices.py` | Intraday fallback for yfinance. |
-| `AUTH_JWT_SECRET` | `app/auth.py` | JWT verification — must equal web `AUTH_SECRET`. |
+| `AUTH_SECRET` | `app/auth.py` | HMAC key — must equal the Vercel `AUTH_SECRET`. |
 | `ALLOWED_EMAILS` | `app/auth.py` | Comma-separated allowlist. |
 | `WEB_CORS_ORIGINS` | `app/main.py` | Comma-separated origin allowlist for CORS. |
 | `STOCKIT_SCHEDULER_ENABLED` | `app/scheduler.py` | Set in `fly.toml`; leave `1`. |
@@ -219,7 +220,7 @@ real deployed stack.
 | Name | Where it's read | Purpose |
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | client + server, e.g. `app/api-client.ts` | Base URL of the Fly API. |
-| `AUTH_SECRET` | `auth.ts` (Auth.js v5) | JWT signing — must equal Fly `AUTH_JWT_SECRET`. |
+| `AUTH_SECRET` | `auth.ts` (Auth.js v5) | HMAC key — must equal Fly `AUTH_SECRET`. |
 | `AUTH_RESEND_KEY` (or `RESEND_API_KEY`) | `auth.ts` | Resend API key for magic-link email. |
 | `AUTH_EMAIL_FROM` (or `EMAIL_FROM`) | `auth.ts` | Sender, must be a verified Resend identity. |
 | `ALLOWED_EMAILS` | `auth.ts` `signIn` callback | Same allowlist as the API. |
