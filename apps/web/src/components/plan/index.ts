@@ -8,3 +8,7 @@ export { Citations } from "./Citations";
 export { PriceChart } from "./PriceChart";
 export { Notes } from "./Notes";
 export { ExportButtons } from "./ExportButtons";
+export { DecisionRail } from "./DecisionRail";
+export { ConvictionBar } from "./ConvictionBar";
+export { RMultipleRuler } from "./RMultipleRuler";
+export { SectionMarker } from "./SectionMarker";

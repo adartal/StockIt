@@ -1,8 +1,14 @@
 import { redirect } from "next/navigation";
 
-import { auth, signOut } from "../../auth";
-import { Button } from "@/components/ui/button";
+import { auth } from "../../auth";
 import { PlanInputForm } from "@/components/forms/plan-input-form";
+import { MarketStrip } from "@/components/dashboard/MarketStrip";
+import { Tickertape } from "@/components/dashboard/Tickertape";
+import { WatchlistPreview } from "@/components/dashboard/WatchlistPreview";
+import { listWatchlist } from "@/lib/api";
+import type { WatchlistItem } from "@/lib/api";
+
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const session = await auth();
@@ -11,37 +17,28 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const email = session.user.email;
+  let items: WatchlistItem[] = [];
+  try {
+    items = await listWatchlist();
+  } catch {
+    items = [];
+  }
 
   return (
-    <main className="flex min-h-screen flex-col bg-background">
-      <header className="flex items-center justify-between border-b border-border px-6 py-3">
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">StockIt</h1>
-          <span className="text-xs text-muted-foreground">
-            Personal portfolio-action engine
-          </span>
+    <>
+      <Tickertape items={items} />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 sm:py-14">
+        <div className="grid gap-12 lg:grid-cols-[1fr_320px]">
+          <PlanInputForm />
+          <div className="space-y-6">
+            <WatchlistPreview items={items} />
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {email}
-          </span>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
-            <Button type="submit" variant="ghost" size="sm">
-              Sign out
-            </Button>
-          </form>
-        </div>
-      </header>
 
-      <section className="flex flex-1 items-start justify-center px-4 py-10 sm:py-16">
-        <PlanInputForm />
-      </section>
-    </main>
+        <div className="mt-14">
+          <MarketStrip />
+        </div>
+      </main>
+    </>
   );
 }

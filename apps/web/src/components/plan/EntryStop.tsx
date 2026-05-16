@@ -1,58 +1,101 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { CrosshairIcon, OctagonAlertIcon, ScaleIcon } from "lucide-react";
+
+import { RMultipleRuler } from "@/components/plan/RMultipleRuler";
+import { SectionMarker } from "@/components/plan/SectionMarker";
 import type { Plan } from "@/types/generated";
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Stat({
+  label,
+  value,
+  sub,
+  align = "left",
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+  align?: "left" | "right";
+}) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+    <div className={align === "right" ? "text-right" : ""}>
+      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
         {label}
-      </span>
-      <span className="font-medium">{value}</span>
+      </p>
+      <p className="font-display text-3xl font-medium tabular-nums leading-tight">
+        {value}
+      </p>
+      {sub ? (
+        <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+      ) : null}
     </div>
   );
 }
 
 export function EntryStop({ plan }: { plan: Plan }) {
   const { entry, sizing, stop } = plan;
+  const levels = entry.levels.length ? entry.levels.join(" · ") : "—";
+  const riskPctStr = `${(sizing.risk_pct * 100).toFixed(2)}%`;
 
   return (
-    <Card className="ring-2 ring-foreground/15">
-      <CardHeader>
-        <CardTitle>Entry · Sizing · Stop</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-6 md:grid-cols-3">
-        <div className="space-y-3">
-          <h3 className="font-heading text-sm font-semibold">Entry</h3>
-          <Row label="Kind" value={<span className="capitalize">{entry.kind.replace("_", " ")}</span>} />
-          <Row
-            label="Levels"
-            value={entry.levels.length > 0 ? entry.levels.join(", ") : "—"}
+    <section className="reveal-up space-y-6 rounded-xl border border-border bg-card p-6 shadow-[0_1px_0_color-mix(in_oklch,var(--foreground)_5%,transparent)]">
+      <SectionMarker label="The decision" icon={CrosshairIcon} />
+
+      <RMultipleRuler plan={plan} />
+
+      <div className="grid gap-6 sm:grid-cols-3">
+        <div className="space-y-3 sm:border-r sm:border-border sm:pr-6">
+          <Stat
+            label="Entry"
+            value={`$${levels.split(" · ")[0] ?? "—"}`}
+            sub={
+              <>
+                <span className="capitalize">{entry.kind.replace("_", " ")}</span>
+                {entry.levels.length > 1 ? (
+                  <span> · ladder {levels}</span>
+                ) : null}
+              </>
+            }
           />
-          <Row label="Conditions" value={entry.conditions || "—"} />
+          {entry.conditions ? (
+            <p className="border-l-2 border-primary/60 pl-3 text-xs leading-relaxed text-muted-foreground">
+              {entry.conditions}
+            </p>
+          ) : null}
         </div>
 
-        <div className="space-y-3 md:border-l md:pl-6">
-          <h3 className="font-heading text-sm font-semibold">Sizing</h3>
-          <Row label="Risk %" value={`${(sizing.risk_pct * 100).toFixed(2)}%`} />
-          <Row label="Shares" value={sizing.shares.toLocaleString()} />
-          <Row label="$ Exposure" value={`$${sizing.dollar_exposure}`} />
-          <Row label="R value" value={`$${sizing.R_value}`} />
+        <div className="space-y-3 sm:border-r sm:border-border sm:pr-6">
+          <Stat
+            label="Sizing"
+            value={`${sizing.shares.toLocaleString()}`}
+            sub={`shares · ${riskPctStr} of capital`}
+          />
+          <dl className="space-y-1 text-xs">
+            <div className="flex items-baseline justify-between">
+              <dt className="text-muted-foreground">$ exposure</dt>
+              <dd className="font-mono tabular-nums">${sizing.dollar_exposure}</dd>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <dt className="text-muted-foreground">R value</dt>
+              <dd className="font-mono tabular-nums">${sizing.R_value}</dd>
+            </div>
+          </dl>
+          <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <ScaleIcon className="size-3" strokeWidth={1.5} />
+            position size
+          </p>
         </div>
 
-        <div className="space-y-3 md:border-l md:pl-6">
-          <h3 className="font-heading text-sm font-semibold">Stop</h3>
-          <Row label="Price" value={<span className="text-base">${stop.price}</span>} />
-          <Row label="Kind" value={<span className="capitalize">{stop.kind.replace("_", " ")}</span>} />
-          <Separator className="my-2" />
-          <p className="text-sm text-muted-foreground">{stop.rationale}</p>
+        <div className="space-y-3">
+          <Stat
+            label="Stop"
+            value={<span className="text-bearish">${stop.price}</span>}
+            sub={<span className="capitalize">{stop.kind.replace("_", " ")}</span>}
+          />
+          <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <OctagonAlertIcon className="mt-0.5 size-3.5 shrink-0 text-bearish" strokeWidth={1.5} />
+            <span className="leading-relaxed">{stop.rationale}</span>
+          </p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

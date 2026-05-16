@@ -7,9 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-fraunces);
+  --font-heading: var(--font-fraunces);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +40,10 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-bullish: var(--bullish);
+  --color-bearish: var(--bearish);
+  --color-neutral: var(--neutral);
+  --color-amber-signal: var(--amber-signal);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,73 +53,93 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* LIGHT — "Broadsheet": warm cream paper, ink black, deep oxblood. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(0.985 0.008 85);
+  --foreground: oklch(0.18 0.012 50);
+  --card: oklch(0.995 0.005 85);
+  --card-foreground: oklch(0.18 0.012 50);
+  --popover: oklch(0.995 0.005 85);
+  --popover-foreground: oklch(0.18 0.012 50);
+
+  --primary: oklch(0.42 0.13 25);
+  --primary-foreground: oklch(0.985 0.008 85);
+  --secondary: oklch(0.94 0.012 80);
+  --secondary-foreground: oklch(0.22 0.02 40);
+  --muted: oklch(0.94 0.012 80);
+  --muted-foreground: oklch(0.46 0.02 50);
+  --accent: oklch(0.92 0.02 70);
+  --accent-foreground: oklch(0.22 0.02 40);
+  --destructive: oklch(0.52 0.18 28);
+  --border: oklch(0.86 0.012 75);
+  --input: oklch(0.86 0.012 75);
+  --ring: oklch(0.42 0.13 25);
+
+  --bullish: oklch(0.5 0.13 145);
+  --bearish: oklch(0.52 0.18 28);
+  --neutral: oklch(0.55 0.02 250);
+  --amber-signal: oklch(0.66 0.15 65);
+
+  /* Semantic chart series — no more 5-shade grayscale. */
+  --chart-1: oklch(0.5 0.13 145);     /* bullish forest */
+  --chart-2: oklch(0.52 0.18 28);     /* bearish brick */
+  --chart-3: oklch(0.42 0.13 25);     /* oxblood */
+  --chart-4: oklch(0.55 0.08 230);    /* steel */
+  --chart-5: oklch(0.66 0.15 65);     /* gold */
+
+  --radius: 0.5rem;
+
+  --sidebar: oklch(0.99 0.005 85);
+  --sidebar-foreground: oklch(0.18 0.012 50);
+  --sidebar-primary: oklch(0.42 0.13 25);
+  --sidebar-primary-foreground: oklch(0.985 0.008 85);
+  --sidebar-accent: oklch(0.94 0.012 80);
+  --sidebar-accent-foreground: oklch(0.22 0.02 40);
+  --sidebar-border: oklch(0.86 0.012 75);
+  --sidebar-ring: oklch(0.42 0.13 25);
 }
 
+/* DARK — "Cockpit": near-black with cool tint, phosphor amber signal. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.16 0.012 250);
+  --foreground: oklch(0.96 0.012 80);
+  --card: oklch(0.205 0.013 250);
+  --card-foreground: oklch(0.96 0.012 80);
+  --popover: oklch(0.205 0.013 250);
+  --popover-foreground: oklch(0.96 0.012 80);
+
+  --primary: oklch(0.78 0.16 75);
+  --primary-foreground: oklch(0.16 0.012 250);
+  --secondary: oklch(0.26 0.015 250);
+  --secondary-foreground: oklch(0.96 0.012 80);
+  --muted: oklch(0.24 0.013 250);
+  --muted-foreground: oklch(0.78 0.02 80);
+  --accent: oklch(0.28 0.02 80);
+  --accent-foreground: oklch(0.96 0.012 80);
+  --destructive: oklch(0.68 0.19 28);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.78 0.16 75);
+
+  --bullish: oklch(0.7 0.16 145);
+  --bearish: oklch(0.68 0.19 28);
+  --neutral: oklch(0.7 0.02 250);
+  --amber-signal: oklch(0.78 0.16 75);
+
+  --chart-1: oklch(0.7 0.16 145);
+  --chart-2: oklch(0.68 0.19 28);
+  --chart-3: oklch(0.78 0.16 75);
+  --chart-4: oklch(0.62 0.08 230);
+  --chart-5: oklch(0.55 0.12 30);
+
+  --sidebar: oklch(0.205 0.013 250);
+  --sidebar-foreground: oklch(0.96 0.012 80);
+  --sidebar-primary: oklch(0.78 0.16 75);
+  --sidebar-primary-foreground: oklch(0.16 0.012 250);
+  --sidebar-accent: oklch(0.26 0.015 250);
+  --sidebar-accent-foreground: oklch(0.96 0.012 80);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.78 0.16 75);
 }
 
 @layer base {
@@ -123,10 +148,103 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv11";
+    font-optical-sizing: auto;
+    background-image:
+      radial-gradient(
+        ellipse 80% 40% at 50% -20%,
+        color-mix(in oklch, var(--primary) 6%, transparent),
+        transparent 60%
+      );
+    background-attachment: fixed;
+  }
+  .dark body {
+    background-image:
+      radial-gradient(
+        ellipse 60% 30% at 50% -20%,
+        color-mix(in oklch, var(--primary) 5%, transparent),
+        transparent 65%
+      );
   }
   html {
     @apply font-sans;
   }
+  /* Tabular figures everywhere by default — financial UI must have aligned digits. */
+  .tabular-nums,
+  [class*="font-mono"],
+  table,
+  td,
+  th {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Editorial display utility — Fraunces tuned hard for character.
+   opsz=144 unlocks the display-optimized cut; WONK=1 turns on Fraunces'
+   characterful storied "g"/"e" forms. */
+.font-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-feature-settings: "ss01", "ss02", "ss03";
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 144, "WONK" 1, "SOFT" 50;
+  letter-spacing: -0.02em;
+}
+
+/* Subtle paper grain on light mode */
+@layer utilities {
+  .bg-grain {
+    background-image: url("/grain.svg");
+    background-size: 220px 220px;
+    background-repeat: repeat;
+  }
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+  /* Editorial drop-cap for the first paragraph of long-form prose */
+  .prose-editorial > *:first-child::first-letter {
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+    font-weight: 500;
+    float: left;
+    font-size: 3.5em;
+    line-height: 0.9;
+    padding-right: 0.08em;
+    padding-top: 0.05em;
+    color: var(--primary);
+  }
+  /* Hairline rule used as a section marker */
+  .hairline {
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* Marquee for the tickertape */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker-scroll 90s linear infinite;
+}
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* One-shot pulse for the conviction badge on first paint */
+@keyframes signal-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 50%, transparent); }
+  70%  { box-shadow: 0 0 0 10px color-mix(in oklch, var(--primary) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 0%, transparent); }
+}
+.animate-signal-pulse {
+  animation: signal-pulse 1.8s ease-out 1;
+}
+
+/* Staggered editorial reveal */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal-up {
+  animation: reveal-up 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 @media print {
@@ -137,6 +255,7 @@
   body {
     background: white !important;
     color: black !important;
+    background-image: none !important;
   }
   nav,
   header[data-app-nav],

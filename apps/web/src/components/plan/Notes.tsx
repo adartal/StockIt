@@ -1,14 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { NotebookPenIcon } from "lucide-react";
 
+import { SectionMarker } from "@/components/plan/SectionMarker";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 export interface NoteView {
@@ -41,9 +37,7 @@ export function Notes({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: trimmed }),
         });
-        if (!res.ok) {
-          throw new Error(`POST failed: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`POST failed: ${res.status}`);
         const note: NoteView = await res.json();
         setNotes((prev) => [...prev, note]);
         setText("");
@@ -54,45 +48,45 @@ export function Notes({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Notes</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {notes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No notes yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {notes.map((n) => (
-              <li
-                key={n.id}
-                className="rounded-md border border-border bg-muted/30 p-3 text-sm"
-              >
-                <p className="whitespace-pre-wrap">{n.body}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {new Date(n.created_at).toLocaleString()}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+    <section className="reveal-up space-y-5">
+      <SectionMarker label="Margin notes" icon={NotebookPenIcon} />
 
-        <form onSubmit={onSubmit} className="space-y-2 print:hidden">
-          <Textarea
-            placeholder="Add a note (observations, follow-ups, post-mortems)…"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={3}
-            disabled={pending}
-          />
-          {error && <p className="text-xs text-destructive">{error}</p>}
-          <div className="flex justify-end">
-            <Button type="submit" disabled={pending || !text.trim()}>
-              {pending ? "Adding…" : "Add note"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      {notes.length === 0 ? (
+        <p className="text-sm italic text-muted-foreground">
+          No notes yet. Use this space for observations, follow-ups, and
+          post-mortems.
+        </p>
+      ) : (
+        <ul className="space-y-4">
+          {notes.map((n) => (
+            <li key={n.id} className="border-l-2 border-primary/60 pl-4">
+              <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+                {n.body}
+              </p>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                {new Date(n.created_at).toLocaleString()}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form onSubmit={onSubmit} className="space-y-2 print:hidden">
+        <Textarea
+          placeholder="Add a note (observations, follow-ups, post-mortems)…"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={3}
+          disabled={pending}
+          className="font-mono text-sm"
+        />
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <div className="flex justify-end">
+          <Button type="submit" size="sm" disabled={pending || !text.trim()}>
+            {pending ? "Adding…" : "Add note"}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }
